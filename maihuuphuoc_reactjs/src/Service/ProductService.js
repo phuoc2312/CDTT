@@ -15,7 +15,9 @@ const ProductService = {
     // Lấy sản phẩm theo ID
     getId: async (id) => {
         try {
-            return await Api.get(`product/show/${id}`);
+            const response = await Api.get(`product/show/${id}`);
+            console.log("API response:", response); // In kết quả trả về từ API
+            return response;
         } catch (error) {
             console.error(`Error fetching product with ID ${id}:`, error);
             throw error;

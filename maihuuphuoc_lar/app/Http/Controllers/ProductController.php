@@ -206,7 +206,8 @@ public function show($id)
 {
     // Sử dụng join để kết hợp dữ liệu từ bảng product, productstore và productimage
     $product = Product::join('productstore', 'product.id', '=', 'productstore.product_id')
-        ->join('productimage', 'product.id', '=', 'productimage.product_id') // kết nối với bảng productimage có id bằng product_id
+        ->join('productimage', 'product.id', '=', 'productimage.product_id')
+        ->join('category', 'product.category_id', '=', 'category.id') // kết nối với bảng productimage có id bằng product_id
         ->select(
             'product.id',
             'product.name',
@@ -223,7 +224,8 @@ public function show($id)
             'product.status',
             'productimage.thumbnail', // Lấy thumbnail từ bảng productimage
             'productstore.qty',
-            'productstore.priceroot'
+            'productstore.priceroot',
+            'category.name as category_name',
         )
         ->where('product.id', $id)
         ->first();
@@ -566,6 +568,6 @@ public function status($id)
             'products' => $products
         ]);
     }
-    
+
 
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link ,useNavigate} from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import '../assets/css/styles.css';
 import CategoryService from '../Service/CategoryService';
 import BrandService from '../Service/BrandService';
@@ -14,10 +14,11 @@ function Header() {
         category_id: '',
         brand_id: ''
     });
-    const navigate = useNavigate(); 
+    const navigate = useNavigate();
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        const storedUsername = localStorage.getItem('username');
+        const token = localStorage.getItem('authToken');
+        const storedUsername = localStorage.getItem('name');
+        console.log(localStorage.getItem('name'))
         if (token && storedUsername) {
             setUsername(storedUsername);
         } else {
@@ -30,7 +31,7 @@ function Header() {
             try {
                 const categoriesResponse = await CategoryService.getList(); // Lấy danh mục
                 setCategories(categoriesResponse.categories);
-                
+
                 const brandsResponse = await BrandService.getList(); // Lấy thương hiệu
                 setBrands(brandsResponse.brands);
             } catch (err) {
@@ -41,9 +42,10 @@ function Header() {
     }, []);
 
     const handleLogout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('username');
-        setUsername(null);
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('name');     
+        setUsername(null);                    // Set trạng thái username về null
+        navigate('/login');                   // Điều hướng về trang đăng nhập
     };
 
     const handleChange = (e) => {
@@ -65,16 +67,16 @@ function Header() {
 
     const handleCategorySelect = (categoryId) => {
         setFormData({ ...formData, category_id: categoryId });
-        setIsCategoryOpen(false); 
+        setIsCategoryOpen(false);
         navigate(`/products/category?category_id=${categoryId}`); // Điều hướng đến danh sách sản phẩm theo danh mục
     };
-    
+
     const handleBrandSelect = (brandId) => {
         setFormData({ ...formData, brand_id: brandId });
-        setIsBrandOpen(false); 
+        setIsBrandOpen(false);
         navigate(`/products/brand?brand_id=${brandId}`); // Điều hướng đến danh sách sản phẩm theo thương hiệu
     };
-    
+
     return (
         <header className="bg-gray-dark sticky top-0 z-50">
             <div className="container mx-auto flex justify-between items-center py-4">
@@ -105,8 +107,8 @@ function Header() {
                                 <i className={`fas fa-chevron-down ml-1 text-xs ${isCategoryOpen ? 'rotate-180' : ''}`}></i>
                             </button>
                             {isCategoryOpen && (
-                                <ul className="absolute bg-gray-800 border border-gray-600 mt-1 rounded-md z-10 shadow-lg">                                   
-                                 {categories.map((category) => (
+                                <ul className="absolute bg-gray-800 border border-gray-600 mt-1 rounded-md z-10 shadow-lg">
+                                    {categories.map((category) => (
                                         <li key={category.id} onClick={() => handleCategorySelect(category.id)} className="p-2 text-gray-200 hover:bg-gray-700 cursor-pointer transition-colors duration-200">
                                             {category.name}
                                         </li>
@@ -121,7 +123,7 @@ function Header() {
                                 <i className={`fas fa-chevron-down ml-1 text-xs ${isBrandOpen ? 'rotate-180' : ''}`}></i>
                             </button>
                             {isBrandOpen && (
-                                <ul className="absolute bg-gray-800 border border-gray-600 mt-1 rounded-md z-10 shadow-lg">                                
+                                <ul className="absolute bg-gray-800 border border-gray-600 mt-1 rounded-md z-10 shadow-lg">
                                     {brands.map((brand) => (
                                         <li key={brand.id} onClick={() => handleBrandSelect(brand.id)} className="p-2 text-gray-200 hover:bg-gray-700 cursor-pointer transition-colors duration-200">
                                             {brand.name}

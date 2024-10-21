@@ -3,110 +3,123 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Tymon\JWTAuth\Facades\JWTAuth;
+use Tymon\JWTAuth\Exceptions\JWTException;
+use Carbon\Carbon;
 
 class UserController extends Controller
 {
-    public function login(Request $request)
-    {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
+    public function register(Request $request) {
+        $validator = Validator::make($request->json()->all(), [
+            'name' => 'required|string|max:1000',
+            'email' => 'required|string|email|max:100|unique:user',
+            'phone' => 'nullable|string|max:13',
+            'address' => 'nullable|string|max:1000',
+            'gender' => 'nullable|string|max:10',
+            'username' => 'required|string|max:255|unique:user',
+            'password' => 'required|string|min:6|confirmed',
+            'roles' => 'nullable|in:customer,admin',
         ]);
 
-        if (!Auth::attempt($request->only('email', 'password'))) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Email hoặc mật khẩu không chính xác',
-            ], 401);
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 400);
         }
 
-        $user = Auth::user();
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Đăng nhập thành công',
-            'access_token' => $token,
-            'username' => $user->username, // Trả về username để hiển thị
-            'token_type' => 'Bearer',
+        $user = User::create([
+            'name' => $request->json()->get('name'),
+            'email' => $request->json()->get('email'),
+            'phone' => $request->json()->get('phone'),
+            'address' => $request->json()->get('address'),
+            'gender' => $request->json()->get('gender'),
+            'thumbnail' => $request->json()->get('thumbnail'),
+            'roles' => $request->json()->get('roles', 'customer'),
+            'username' => $request->json()->get('username'),
+            'password' => Hash::make($request->json()->get('password')),
+            'status' => 1,
+            'created_at' => Carbon::now(),
+            'created_by' => 1,
         ]);
+
+        // Generate JWT token
+        $token = JWTAuth::fromUser($user);
+
+        // Fix: Return 'user' instead of 'users'
+        return response()->json(compact('user', 'token'), 201);
     }
 
 
+    // // Đăng nhập user
 
 
-    public function register(Request $request)
-    {
+    public function login(Request $request) {
+        $credentials = $request->only('username', 'password');
+
         try {
-            $request->validate([
-                'name' => 'required|string|max:255',
-                'username' => 'required|string|max:255',
-                'email' => 'required|string|email|max:255|unique:user',
-                'password' => 'required|string|min:8',
-                'passwordconfirmation' => 'required|string|same:password',
-                'phone' => 'required|string|max:20',
-                'address' => 'nullable|string|max:255',
-                'gender' => 'nullable|string|max:10',
-            ]);
-
-
-            $user = User::create([
-                'name' => $request->name,
-                'username' => $request->username,
-                'email' => $request->email,
-                'phone' => $request->phone,
-                'address' => $request->address,
-                'gender' => $request->gender,
-                'password' => Hash::make($request->password),
-            ]);
-
-
-            $token = $user->createToken('auth_token')->plainTextToken;
-
-            return response()->json([
-                'status' => true,
-                'message' => 'Đăng ký thành công',
-                'user' => $user,
-                'access_token' => $token,
-                'token_type' => 'Bearer',
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Đăng ký thất bại: ' . $e->getMessage(),
-            ], 500);
+            // Attempt to authenticate the user
+            if (!$token = JWTAuth::attempt($credentials)) {
+                return response()->json(['error' => 'Invalid credentials'], 400);
+            }
+        } catch (JWTException $e) {
+            return response()->json(['error' => 'Could not create token'], 500);
         }
-    }
 
+        // Lấy thông tin người dùng đã xác thực
+        $user = auth()->user();
 
-    public function index(Request $request)
-    {
-        $users = User::all();
-
+        // Trả về token và thông tin người dùng
         return response()->json([
-            'status' => true,
-            'user' => $users,
+            'token' => $token,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                // Nếu bạn muốn thêm các trường khác, có thể thêm ở đây
+                'email' => $user->email, // Ví dụ: email
+                'phone' => $user->phone, // Ví dụ: số điện thoại
+                // Thêm các trường khác nếu cần thiết
+            ]
         ]);
     }
 
-    // Hàm hiển thị profile
-    public function profile(Request $request)
-    {
-        return response()->json($request->user());
+
+    // Lấy thông tin user đang đăng nhập
+    public function getAuthenticatedUser() {
+        try {
+            if (!$user = JWTAuth::parseToken()->authenticate()) {
+                return response()->json(['user_not_found'], 404);
+            }
+        } catch (Tymon\JWTAuth\Exceptions\TokenExpiredException $e) {
+            return response()->json(['token_expired'], $e->getStatusCode());
+        } catch (Tymon\JWTAuth\Exceptions\TokenInvalidException $e) {
+            return response()->json(['token_invalid'], $e->getStatusCode());
+        } catch (Tymon\JWTAuth\Exceptions\JWTException $e) {
+            return response()->json(['token_absent'], $e->getStatusCode());
+        }
+
+        return response()->json(compact('user'));
     }
 
-    // Hàm đăng xuất
-    public function logout(Request $request)
+    public function index()
     {
-        $request->user()->token()->revoke();
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Đăng xuất thành công',
-        ]);
+        $users = User::where('status','!=',0)
+            ->select("id","name","email","phone","address","gender","created_at","status")
+            ->get();
+            if($users->isEmpty()) {
+                $result = [
+                    'status' => false,
+                    'message' => 'Không tìm thấy dữ liệu',
+                    'users' => null
+                ];
+            }
+            else {
+                $result =[
+                    'status'=>true,
+                    'message'=>'Tải dữ liệu thành công',
+                    'users'=>$users
+                ];
+            }
+        return response()->json($result);
     }
 }

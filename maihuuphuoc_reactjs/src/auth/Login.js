@@ -2,42 +2,40 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/header';
 import Footer from '../components/footer';
-import axios from 'axios';
+import UserService from '../Service/UserService'; // Thêm import cho UserService
 
-function Login() {
-    const [email, setEmail] = useState('');
+const Login = () => {
+    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    const navigate = useNavigate();
+    const [errorMessage, setErrorMessage] = useState('');
+    const [loading, setLoading] = useState(false); // Thêm trạng thái loading
 
     const handleLogin = async (e) => {
         e.preventDefault();
-        setLoading(true);
-        setError('');
 
-        const url = `http://127.0.0.1:8000/api/user/login`; // URL của API đăng nhập
-        const payload = { email, password }; // Dữ liệu gửi đi
+        if (!username || !password) {
+            setErrorMessage('Vui lòng nhập tên đăng nhập và mật khẩu.');
+            return;
+        }
+
+        setLoading(true); // Bắt đầu loading
 
         try {
-            const response = await axios.post(url, payload); // Gọi API
+            const response = await UserService.login({ username, password });
+            const token = response.token;
+            const userId = response.user.id;
+            const name = response.user.name;
+            console.log(response);
 
-            if (response.data.status) {
-                // Nếu đăng nhập thành công, lưu token và username từ phản hồi API
-                localStorage.setItem('token', response.data.access_token);
-                localStorage.setItem('username', response.data.username); // Lưu username thay vì email
-                navigate('/'); // Điều hướng về trang chủ
-            } else {
-                // Nếu đăng nhập thất bại, hiển thị thông báo lỗi
-                setError(response.data.message || 'Có lỗi xảy ra từ API');
-            }
+            localStorage.setItem('authToken', token);
+            localStorage.setItem('userId', userId);
+            localStorage.setItem('name', name);
+            window.location.href = '/'; // Chuyển hướng sau khi đăng nhập thành công
         } catch (error) {
-            // Xử lý lỗi từ phía API hoặc mạng
-            const errorMsg = error.response?.data?.message || error.message || 'Vui lòng thử lại.';
-            setError(`Đã xảy ra lỗi: ${errorMsg}`);
+            setErrorMessage('Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.');
+            console.error('Error logging in:', error);
         } finally {
-            // Kết thúc quá trình và tắt trạng thái loading
-            setLoading(false);
+            setLoading(false); // Kết thúc loading
         }
     };
 
@@ -51,16 +49,16 @@ function Login() {
                         <div className="md:w-1/2 bg-white rounded-lg shadow-md p-8 ml-60">
                             <h2 className="text-3xl font-semibold mb-6 text-center">Login</h2>
                             <form onSubmit={handleLogin}>
-                                {error && (
-                                    <p className="text-red-500 mb-4 text-center">{error}</p>
+                                {errorMessage && ( // Sửa từ error thành errorMessage
+                                    <p className="text-red-500 mb-4 text-center">{errorMessage}</p>
                                 )}
                                 <div className="mb-4">
-                                    <label htmlFor="email" className="block text-gray-700">Email</label>
+                                    <label htmlFor="username" className="block text-gray-700">Username</label>
                                     <input
-                                        type="email"
-                                        id="email"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
+                                        type="text" // Sửa type từ "username" thành "text"
+                                        id="username"
+                                        value={username}
+                                        onChange={(e) => setUsername(e.target.value)} // Sửa setusername thành setUsername
                                         className="w-full px-4 py-2 border rounded-lg focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
                                         required
                                     />
@@ -86,10 +84,10 @@ function Login() {
                                 </div>
                                 <button
                                     type="submit"
-                                    disabled={loading}
+                                    disabled={loading} // Vô hiệu hóa nút khi loading
                                     className="bg-primary text-white border border-primary hover:bg-transparent hover:text-primary py-2 px-4 rounded-full w-full"
                                 >
-                                    {loading ? 'Loading...' : 'Login'}
+                                    {loading ? 'Loading...' : 'Login'} {/* Hiển thị thông báo loading */}
                                 </button>
                             </form>
                         </div>

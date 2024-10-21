@@ -195,6 +195,7 @@ Route::prefix("user")->group(function() {
         Route::post("/logout", [UserController::class, "logout"]);
     });
 });
+// UC: Đăng nhập và quên mật khẩu
 
 
 // UC: Quản lý đơn hàng

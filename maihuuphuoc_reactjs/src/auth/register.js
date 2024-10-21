@@ -12,7 +12,8 @@ function Register() {
     const [address, setAddress] = useState('');
     const [gender, setGender] = useState('');
     const [password, setPassword] = useState('');
-    const [passwordconfirmation, setpasswordconfirmation] = useState('');
+
+    const [password_confirmation, setpasswordconfirmation] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
@@ -21,22 +22,25 @@ function Register() {
         e.preventDefault();
         setLoading(true);
         setError('');
-
+    
         const url = 'http://127.0.0.1:8000/api/user/register';
-        const payload = { name, username, email, phone, address, gender, password, passwordconfirmation };
-
-        if (password !== passwordconfirmation) {
+        const payload = { name, username, email, phone, address, gender, password, password_confirmation };
+    
+        if (password !== password_confirmation) {
             setError('Mật khẩu xác nhận không khớp.');
             setLoading(false);
             return;
         }
-
+    
         try {
             const response = await axios.post(url, payload);
-
-            if (response.data.status) {
-                localStorage.setItem('token', response.data.access_token);
+    
+            if (response.status === 201) { // Kiểm tra status HTTP
+                // Lưu token và username vào localStorage
+                localStorage.setItem('token', response.data.token);
                 localStorage.setItem('username', username);
+    
+                // Chuyển hướng đến trang chủ
                 navigate('/');
             } else {
                 setError(response.data.message || 'Có lỗi xảy ra từ API');
@@ -48,6 +52,7 @@ function Register() {
             setLoading(false);
         }
     };
+    
 
     return (
         <div>
@@ -143,7 +148,7 @@ function Register() {
                                     <input
                                         type="password"
                                         id="password-confirmation"
-                                        value={passwordconfirmation}
+                                        value={password_confirmation}
                                         onChange={(e) => setpasswordconfirmation(e.target.value)}
                                         className="w-full px-4 py-2 border rounded-lg focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
                                         required
