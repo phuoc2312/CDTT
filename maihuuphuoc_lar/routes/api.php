@@ -11,9 +11,13 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\TopicController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\OrderDetailController;
 use App\Http\Controllers\ProductSaleController;
 use App\Http\Controllers\ProductStoreController;
 use App\Http\Controllers\BrandController;
+use App\Http\Controllers\ContactController;
+
+use App\Http\Controllers\CartController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -93,7 +97,7 @@ Route::prefix("banner")->group(function() {
 
 
 // UC: Quản lý thương hiệu
-    Route::prefix("brand")->group(function() {
+Route::prefix("brand")->group(function() {
         Route::get("/", [BrandController::class, "index"]);
         Route::get("/trash", [BrandController::class, "trash"]);
         Route::get("/show/{id}", [BrandController::class, "show"]);
@@ -106,10 +110,10 @@ Route::prefix("banner")->group(function() {
         Route::put('/update/status/{id}', [BrandController::class, 'updateStatus']);
         Route::delete("/forceDelete/{id}", [BrandController::class, "forceDelete"]);
 
-    });
+});
 
 // UC: Quản lý danh mục
-    Route::prefix("category")->group(function() {
+Route::prefix("category")->group(function() {
         Route::get("/", [CategoryController::class, "index"]);
         Route::get("/trash", [CategoryController::class, "trash"]);
         Route::get("/show/{id}", [CategoryController::class, "show"]);
@@ -121,7 +125,7 @@ Route::prefix("banner")->group(function() {
         Route::delete('category/{id}', [CategoryController::class, 'destroy']);
         Route::put('/update/status/{id}', [CategoryController::class, 'updateStatus']);
         Route::delete("/forceDelete/{id}", [CategoryController::class, "forceDelete"]);
-    });
+});
 
 // UC: Quản lý menu
 Route::prefix("menu")->group(function() {
@@ -146,6 +150,7 @@ Route::prefix("contact")->group(function() {
     Route::get("/delete/{id}", [ContactController::class, "delete"]);
     Route::get("/restore/{id}", [ContactController::class, "restore"]);
     Route::delete("/destroy/{id}", [ContactController::class, "destroy"]);
+    Route::post("/store", [ContactController::class, "store"]);
 });
 
 // UC: Quản lý bài viết
@@ -199,16 +204,20 @@ Route::prefix("user")->group(function() {
 
 
 // UC: Quản lý đơn hàng
-Route::prefix("order")->group(function() {
-    Route::get("/", [OrderController::class, "index"]);
-    Route::get("/trash", [OrderController::class, "trash"]);
-    Route::post("/store", [OrderController::class, "store"]);
-
-Route::get("/show/{id}", [OderController::class, "show"]);
-    Route::get("/status/{id}", [OderController::class, "status"]);
-    Route::delete("/destroy/{id}", [OderController::class, "destroy"]);
+Route::prefix('order')->group(function() {
+    Route::get('/', [OrderController::class, 'index']); // Danh sách đơn hàng
+    Route::get('/show/{id}', [OrderController::class, 'show']); // Hiển thị đơn hàng
+    Route::get('/trash', [OrderController::class, 'trash']); // Đơn hàng trong thùng rác
+    Route::get('/status/{id}', [OrderController::class, 'status']); // Thay đổi trạng thái đơn hàng
+    Route::post('/store', [OrderController::class, 'store']); // Tạo đơn hàng mới
+    Route::delete('/destroy/{id}', [OrderController::class, 'destroy']); // Xóa đơn hàng
 });
 
+
+Route::prefix('orderdetail')->group(function() {
+    Route::get('/show/{orderId}', [OrderDetailController::class, 'show']); // Hiển thị chi tiết đơn hàng
+    Route::delete('/destroy/{id}', [OrderDetailController::class, 'destroy']); // Xóa chi tiết đơn hàng
+});
 
 Route::prefix("product")->group(function() {
     Route::get("/", [ProductController::class, "index"]); // Lấy danh sách sản phẩm
@@ -223,6 +232,8 @@ Route::prefix("product")->group(function() {
     Route::get("/indexpro", [ProductController::class, "indexFrontend"]); // Lấy danh sách sản phẩm cho frontend
     Route::get('/category/{id}', [ProductController::class, 'getProductsByCategory']);
     Route::get('/brand/{brandId}', [ProductController::class, 'getProductsByBrand']);
+    Route::get('/related/{id}', [ProductController::class, 'getRelatedProducts']); // Lấy sản phẩm liên quan
+    Route::get('products/filter', [ProductController::class, 'filterProducts']);
 
 });
 
@@ -251,3 +262,15 @@ Route::prefix("productstore")->group(function() {
     Route::get("/restore/{id}", [ProductStoreController::class, "restore"]);
     Route::delete("/destroy/{id}", [ProductStoreController::class, "destroy"]);
 });
+
+
+
+Route::prefix('cart')->group(function() {
+    Route::post('/store', [CartController::class, 'store']);
+    Route::get('/show/{user_id}', [CartController::class, 'showCart']); // Route để lấy giỏ hàng
+    Route::put('/update/{id}', [CartController::class, 'update']);
+    Route::delete('/destroy/{id}', [CartController::class, 'destroy']);
+});
+
+
+

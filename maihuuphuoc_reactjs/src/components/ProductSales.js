@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import ProductService from '../Service/ProductService'; // Đường dẫn có thể cần được điều chỉnh
 import { ApiImages } from '../Api/ApiImages'
+import { useNavigate } from 'react-router-dom';
+import CartService from '../Service/CartService';
 function ProductSales() {
   const [productsale, setProductsale] = useState([]);
-
+  const navigate = useNavigate();
   useEffect(() => {
     (async () => {
       const limit = 5; // Giới hạn số lượng sản phẩm
@@ -11,6 +13,29 @@ function ProductSales() {
       setProductsale(result.products); // Lưu sản phẩm vào state
     })();
   }, []);
+  const handleProductClick = (id) => {
+    navigate(`/product/${id}`);
+  };
+  const handleAddToCart = async (product) => {
+    const quantity = 1; // Hoặc bạn có thể thêm logic để lấy số lượng từ input
+    console.log(`Thêm ${quantity} sản phẩm vào giỏ hàng:`, product);
+
+    // Lấy user_id từ localStorage
+    const userId = localStorage.getItem('userId'); // Đảm bảo 'userId' là khóa đúng bạn đã lưu
+
+    const cartItem = {
+      user_id: userId, // Sử dụng userId từ localStorage
+      product_id: product.id,
+      qty: quantity
+    };
+
+    try {
+      const response = await CartService.add(cartItem);
+      console.log('Sản phẩm đã được thêm vào giỏ hàng:', response);
+    } catch (error) {
+      console.error('Lỗi khi thêm sản phẩm vào giỏ hàng:', error.response?.data || error.message);
+    }
+  };
 
   return (
     <section id="latest-products" className="py-10">
@@ -19,7 +44,7 @@ function ProductSales() {
         <div className="flex flex-wrap -mx-4">
           {productsale.length > 0 ? (
             productsale.map((product) => (
-              <div key={product.id} className="w-full sm:w-1/2 lg:w-1/4 px-4 mb-8">
+              <div key={product.id} className="w-full sm:w-1/2 lg:w-1/4 px-4 mb-8" onClick={() => handleProductClick(product.id)}>
                 <div className="bg-white p-3 rounded-lg shadow-lg transform hover:scale-105 transition-transform duration-300 h-full flex flex-col">
                   <img
                     src={`${ApiImages}/images/product/${product.product_images[0]?.thumbnail}`}
@@ -34,7 +59,12 @@ function ProductSales() {
                       <span className="text-sm line-through ml-2 text-gray-500">${product.pricebuy}</span>
                     )}
                   </div>
-                  <button className="bg-primary border border-transparent hover:bg-transparent hover:border-primary text-white hover:text-primary font-semibold py-2 px-4 rounded-full w-full">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation(); // Ngăn không cho sự kiện click trên button kích hoạt onClick của div cha
+                      handleAddToCart(product);
+                    }} 
+                    className="bg-primary border border-transparent hover:bg-transparent hover:border-primary text-white hover:text-primary font-semibold py-2 px-4 rounded-full w-full">
                     Add to Cart
                   </button>
                 </div>

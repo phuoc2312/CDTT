@@ -8,7 +8,8 @@ use App\Models\ProductStore;
 use App\Models\ProductSale;
 use App\Models\Order;
 use App\Models\OrderDetail;
-
+use App\Models\Category;
+use App\Models\Brand;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -569,5 +570,142 @@ public function status($id)
         ]);
     }
 
+    public function getRelatedProducts(Request $request, $productId)
+{
+    // Lấy thông tin sản phẩm hiện tại để tìm kiếm sản phẩm liên quan
+    $product = Product::find($productId);
 
+    if (!$product) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Sản phẩm không tồn tại',
+        ], 404);
+    }
+
+    // Lấy danh mục hoặc thương hiệu của sản phẩm hiện tại
+    $categoryId = $product->category_id;
+    $brandId = $product->brand_id;
+
+    // Lấy danh sách sản phẩm liên quan cùng danh mục hoặc cùng thương hiệu
+    $relatedProducts = Product::join('productstore', 'product.id', '=', 'productstore.product_id')
+        ->join('productimage', 'product.id', '=', 'productimage.product_id')
+        ->select(
+            'product.id',
+            'product.name',
+            'product.slug',
+            'product.category_id',
+            'product.brand_id',
+            'product.content',
+            'product.pricebuy',
+            'product.description',
+            'product.created_at',
+            'product.status',
+            'productimage.thumbnail',
+            'productstore.qty',
+            'productstore.priceroot'
+        )
+        ->where('product.id', '!=', $productId) // Loại trừ sản phẩm hiện tại
+        ->where(function ($query) use ($categoryId, $brandId) {
+            $query->where('product.category_id', $categoryId) // Sản phẩm cùng danh mục
+                  ->orWhere('product.brand_id', $brandId);   // Hoặc cùng thương hiệu
+        })
+        ->where('product.status', '!=', 0) // Sản phẩm có trạng thái không phải là 0
+        ->limit(10) // Giới hạn số lượng sản phẩm liên quan (ví dụ 10 sản phẩm)
+        ->get();
+
+    // Thêm URL đầy đủ cho thumbnail
+    foreach ($relatedProducts as $relatedProduct) {
+        $relatedProduct->thumbnail = url('images/product/' . $relatedProduct->thumbnail);
+    }
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Tải dữ liệu sản phẩm liên quan thành công',
+        'related_products' => $relatedProducts
+    ]);
+}
+
+// Lọc
+
+function getListCategoryId($category_id) {
+    $list=[];
+    array_push($list,$category_id);
+    $list_cat1=Category::where([['status','=','1'],['parent_id','=',$category_id]])->get();
+    if(count($list_cat1)>0) {
+        foreach ($list_cat1 as $row_cat1) {
+            array_push($list,$row_cat1->id);
+            $list_cat2=Category::where([['status','=','1'],['parent_id','=',$row_cat1->id]])->get();
+            if(count($list_cat2)>0) {
+                foreach ($list_cat2 as $row_cat2) {
+                    array_push($list,$row_cat2->id);
+                }
+            }
+        }
+    }
+    return $list;
+}
+
+
+public function filterProducts(Request $request)
+{
+    $query = Product::join('productstore', 'product.id', '=', 'productstore.product_id')
+        ->join('productimage', 'product.id', '=', 'productimage.product_id')
+        ->join('brand', 'product.brand_id', '=', 'brand.id')
+        ->join('category', 'product.category_id', '=', 'category.id')
+        ->select(
+            'product.id',
+            'product.name',
+            'product.slug',
+            'product.category_id',
+            'product.brand_id',
+            'brand.name as brand_name',
+            'category.name as category_name',
+            'product.content',
+            'product.pricebuy',
+            'product.description',
+            'productimage.thumbnail',
+            'productstore.qty'
+        )
+        ->where('product.status', '!=', 0)
+        ->where('productstore.status', '!=', 2);
+
+    // Lọc theo category
+    if ($request->has('category_id') && !empty($request->category_id)) {
+        $categoryIds = explode(',', $request->category_id); // Chuyển đổi chuỗi thành mảng
+        $query->whereIn('product.category_id', $categoryIds);
+    }
+
+    // Lọc theo brand
+    if ($request->has('brand_id') && !empty($request->brand_id)) {
+        $brandIds = explode(',', $request->brand_id); // Chuyển đổi chuỗi thành mảng
+        $query->whereIn('product.brand_id', $brandIds);
+    }
+
+    // Lọc theo khoảng giá
+    if ($request->has('min_price') && $request->has('max_price')) {
+        $query->whereBetween('product.pricebuy', [$request->min_price, $request->max_price]);
+    }
+
+    // Sắp xếp sản phẩm
+    if ($request->has('sort_by')) {
+        $sortBy = $request->input('sort_by');
+        $order = $request->input('order', 'asc'); // Mặc định là 'asc'
+        $query->orderBy("product.$sortBy", $order);
+    } else {
+        $query->orderBy('product.created_at', 'desc'); // Mặc định theo thời gian
+    }
+
+    $products = $query->get();
+
+    // Thêm URL cho ảnh thumbnail
+    foreach ($products as $product) {
+        $product->thumbnail = url('images/product/' . $product->thumbnail);
+    }
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Lọc sản phẩm thành công',
+        'products' => $products
+    ]);
+}
 }

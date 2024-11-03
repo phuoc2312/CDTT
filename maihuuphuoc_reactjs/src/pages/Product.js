@@ -5,6 +5,7 @@ import Header from '../components/header';
 import Footer from '../components/footer';
 import CategoryService from '../Service/CategoryService';
 import BrandService from '../Service/BrandService';
+import CartService from '../Service/CartService';
 
 function Product() {
     const [products, setProducts] = useState([]);
@@ -68,7 +69,6 @@ function Product() {
     const indexOfLastProduct = currentPage * productsPerPage;
     const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
     const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
-
     const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
 
     const handleProductClick = (id) => {
@@ -122,6 +122,27 @@ function Product() {
             }
         }
         setCurrentPage(1);
+    };
+
+    const handleAddToCart = async (product) => {
+        const quantity = 1; // Hoặc bạn có thể thêm logic để lấy số lượng từ input
+        console.log(`Thêm ${quantity} sản phẩm vào giỏ hàng:`, product);
+
+        // Lấy user_id từ localStorage
+        const userId = localStorage.getItem('userId'); // Đảm bảo 'userId' là khóa đúng bạn đã lưu
+
+        const cartItem = {
+            user_id: userId, // Sử dụng userId từ localStorage
+            product_id: product.id,
+            qty: quantity
+        };
+
+        try {
+            const response = await CartService.add(cartItem);
+            console.log('Sản phẩm đã được thêm vào giỏ hàng:', response);
+        } catch (error) {
+            console.error('Lỗi khi thêm sản phẩm vào giỏ hàng:', error.response?.data || error.message);
+        }
     };
 
     return (
@@ -203,29 +224,31 @@ function Product() {
                                                 <img
                                                     src={product.thumbnail}
                                                     alt={product.name}
-                                                    className="w-full h-56 object-cover mb-4 rounded-lg"
+                                                    className="w-full h-56 object-cover mb-4 rounded"
                                                 />
-                                                <div className="text-center">
-                                                    <a className="text-xl font-semibold text-gray-800 hover:text-primary transition-colors duration-200 mb-2 block">{product.name}</a>
-                                                    <p className="text-gray-500">{product.category_name}</p>
-                                                </div>
-                                                <div className="flex items-center justify-center mt-4">
-                                                    <span className="text-lg font-bold text-primary">${product.pricebuy}</span>
-                                                </div>
-                                                <button className="mt-4 bg-primary text-white py-2 px-4 rounded-full hover:bg-transparent hover:text-primary hover:border-primary border transition-all">
-                                                    Add to Cart
+                                                <h2 className="text-lg font-bold mb-2">{product.name}</h2>
+                                                <p className="text-lg font-bold text-primary">${product.pricebuy.toLocaleString()}</p>
+                                                <button
+                                                    className="bg-primary border border-transparent hover:bg-transparent hover:border-primary text-white hover:text-primary font-semibold py-2 px-4 rounded-full w-full"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation(); // Ngăn chặn sự kiện click tới sản phẩm
+                                                        handleAddToCart(product);
+                                                    }}
+                                                >
+                                                    Thêm vào giỏ
                                                 </button>
                                             </div>
                                         </div>
                                     ))
                                 ) : (
-                                    <p>Không tìm thấy sản phẩm nào.</p>
+                                    <p className="w-full text-center">Không có sản phẩm nào.</p>
                                 )}
                             </div>
                         </div>
                     </section>
 
-                    <div className="mt-8 flex justify-center space-x-2">
+                    {/* Pagination */}
+                     <div className="mt-8 flex justify-center space-x-2">
                         {Array.from({ length: totalPages }, (_, index) => (
                             <button
                                 key={index + 1}

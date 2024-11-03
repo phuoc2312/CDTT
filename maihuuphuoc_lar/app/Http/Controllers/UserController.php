@@ -122,4 +122,18 @@ class UserController extends Controller
             }
         return response()->json($result);
     }
+    public function show($id)
+{
+    // Tìm người dùng theo ID
+    $user = User::find($id);
+
+    // Kiểm tra xem người dùng có tồn tại hay không
+    if (!$user) {
+        return response()->json(['message' => 'User not found'], 404);
+    }
+
+    // Trả về thông tin người dùng
+    return response()->json($user);
+}
+
 }

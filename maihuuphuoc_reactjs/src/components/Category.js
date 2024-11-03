@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate để điều hướng
 import CategoryService from '../Service/CategoryService'; // Đường dẫn tới service của bạn
 import { ApiImages } from '../Api/ApiImages';
 
 function Category() {
   const [categories, setCategories] = useState([]);
+  const navigate = useNavigate(); // Khởi tạo useNavigate
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -20,13 +22,20 @@ function Category() {
     fetchCategories();
   }, []);
 
+  const handleCategoryClick = (categoryId) => {
+    navigate(`/products/category?category_id=${categoryId}`)
+  };
+
   return (
     <section id="product-banners">
       <div className="container mx-auto py-10">
         <div className="flex overflow-x-auto hide-scrollbar">
           {categories.map((category) => (
             <div key={category.id} className="min-w-[200px] sm:min-w-[250px] px-2 mb-8">
-              <div className="category-banner relative overflow-hidden rounded-lg shadow-lg group transform transition-transform duration-300 hover:scale-105">
+              <div
+                className="category-banner relative overflow-hidden rounded-lg shadow-lg group transform transition-transform duration-300 hover:scale-105"
+                onClick={() => handleCategoryClick(category.id)} // Gọi hàm khi nhấn vào danh mục
+              >
                 <img
                   src={
                     category.thumbnail
@@ -39,12 +48,11 @@ function Category() {
                 <div className="absolute inset-0 bg-gray-light bg-opacity-50"></div>
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white p-4">
                   <h2 className="text-xl md:text-2xl font-bold mb-4">{category.name}</h2>
-                  <a
-                    href={`/shop/${category.id}`}
+                  <button
                     className="bg-primary hover:bg-transparent border border-transparent hover:border-white text-white hover:text-white font-semibold px-4 py-2 rounded-full inline-block"
                   >
                     Shop now
-                  </a>
+                  </button>
                 </div>
               </div>
             </div>

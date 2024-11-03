@@ -106,9 +106,10 @@ function Footer() {
                   <div key={config.id}>
                     <h3 className="text-lg font-semibold mb-4">Contact Us</h3>
                     <p><img src="assets/images/template-logo.png" alt="Logo" className="h-[60px] mb-4" /></p>
-                    <p>{config.address}</p>
-                    <p className="text-xl font-bold my-4">Phone: {config.phone}</p>
-                    <a href={`mailto:${config.email}`} className="underline">Email: {config.email}</a>
+                    <p className='text-lg font-bold my-4'>{config.address}</p>
+                    <p className="text-lg font-bold my-4">Hotline: {config.hotline}</p>
+                    <p className="text-lg font-bold my-4">Phone: {config.phone}</p>
+                    <a href={`mailto:${config.email}`} className="text-lg font-bold my-4">Email: {config.email}</a>
                   </div>
                 ))
               ) : (

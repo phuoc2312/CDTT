@@ -100,6 +100,27 @@ const ProductService = {
     getProductsByBrand: async (brandId) => {
         return await Api.get(`product/brand/${brandId}`);
     },
+    getRelatedProducts: async (productId, categoryId) => {
+        try {
+            // Giả sử API yêu cầu truyền categoryId cùng với productId
+            return await Api.get(`product/related/${productId}?categoryId=${categoryId}`);
+        } catch (error) {
+            console.error(`Error fetching related products for product ID ${productId}:`, error);
+            throw error; // Ném lỗi để xử lý ở nơi gọi
+        }
+    },
+    getFilterProducts: async (filters) => {
+        return await Api.get(`product/products/filter`, {
+            params: {
+                category_id: filters.categories.join(','),
+                brand_id: filters.brands.join(','),
+                min_price: filters.min_price,
+                max_price: filters.max_price,
+                sort_by: filters.sort_by,
+                order: filters.order,
+            },
+        });
+    },
 }
 
 export default ProductService;

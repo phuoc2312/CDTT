@@ -1,15 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate để điều hướng
 import BrandService from './../Service/BrandService';
 import { ApiImages } from '../Api/ApiImages';
 
 function Brands() {
   const [brands, setBrands] = useState([]);
+  const sliderRef = useRef(null);
+  const navigate = useNavigate(); // Khởi tạo useNavigate
 
   useEffect(() => {
     const fetchBrands = async () => {
       try {
         const result = await BrandService.getList();
-        setBrands(result.brands);  // Gán danh sách thương hiệu vào state
+        setBrands(result.brands); // Gán danh sách thương hiệu vào state
       } catch (error) {
         console.error('Lỗi khi tải danh sách thương hiệu:', error);
         alert('Không thể tải danh sách thương hiệu. Vui lòng kiểm tra lại kết nối hoặc thử lại sau.');
@@ -18,9 +21,6 @@ function Brands() {
 
     fetchBrands();
   }, []);
-
-  // Create a reference for the container
-  const sliderRef = useRef(null);
 
   // Auto scroll function
   useEffect(() => {
@@ -40,10 +40,12 @@ function Brands() {
     };
 
     const interval = setInterval(scrollContent, scrollInterval);
-
-    // Cleanup the interval on component unmount
     return () => clearInterval(interval);
   }, []);
+
+  const handleBrandClick = (brandId) => {
+    navigate(`/products/brand?brand_id=${brandId}`); // Điều hướng đến trang sản phẩm với brandId
+  };
 
   return (
     <section id="brands" className="bg-white py-16 px-8">
@@ -64,10 +66,11 @@ function Brands() {
           >
             {/* Render danh sách thương hiệu nhân đôi để cuộn liên tục */}
             {brands.length > 0 ? (
-              [...brands, ...brands].map((brand, index) => (  // Nhân đôi mảng để tạo hiệu ứng cuộn vòng lặp
+              [...brands, ...brands].map((brand) => (  // Nhân đôi mảng để tạo hiệu ứng cuộn vòng lặp
                 <div
-                  key={index}
+                  key={brand.id} // Sử dụng brand.id làm key
                   className="flex-shrink-0 bg-white shadow-lg rounded-lg p-6 min-w-[200px] lg:min-w-[250px] transition-transform hover:scale-105"
+                  onClick={() => handleBrandClick(brand.id)} // Gọi hàm khi nhấn vào thương hiệu
                 >
                   <div className="flex flex-col items-center text-center">
                     {/* Logo */}

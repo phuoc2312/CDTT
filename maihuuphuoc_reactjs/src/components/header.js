@@ -3,8 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import '../assets/css/styles.css';
 import CategoryService from '../Service/CategoryService';
 import BrandService from '../Service/BrandService';
+import CartService from '../Service/CartService';
+import { ApiImages } from '../Api/ApiImages';
 
 function Header() {
+    const [cartItems, setCartItems] = useState([]); // Trạng thái để lưu trữ sản phẩm trong giỏ hàng
+    const [isHovered, setIsHovered] = useState(false);
     const [isCategoryOpen, setIsCategoryOpen] = useState(false);
     const [isBrandOpen, setIsBrandOpen] = useState(false);
     const [username, setUsername] = useState(null);
@@ -40,10 +44,33 @@ function Header() {
         };
         fetchCategoriesAndBrands();
     }, []);
+    useEffect(() => {
+        const fetchCartItems = async () => {
+            const userId = localStorage.getItem('userId'); // Lấy userId từ Local Storage
+            if (userId) {
+                try {
+                    const response = await CartService.getList(userId); // Gọi API với userId
+                    if (response.status && response.cart.length > 0) {
+                        setCartItems(response.cart); // Đặt cartItems từ phản hồi
+                    } else {
+                        console.log("No cart items found or error in response:", response);
+                        setCartItems([]); // Đặt cartItems thành rỗng
+                    }
+                } catch (error) {
+                    console.error("Error fetching cart items:", error);
+                    setCartItems([]); // Đặt cartItems thành rỗng nếu có lỗi
+                }
+            } else {
+                console.log("User ID not found in Local Storage.");
+            }
+        };
 
+        fetchCartItems();
+    }, []);
     const handleLogout = () => {
         localStorage.removeItem('authToken');
-        localStorage.removeItem('name');     
+        localStorage.removeItem('name');
+        localStorage.removeItem('userId');
         setUsername(null);                    // Set trạng thái username về null
         navigate('/login');                   // Điều hướng về trang đăng nhập
     };
@@ -135,6 +162,7 @@ function Header() {
 
                         <li><Link to="/product" className="hover:text-secondary font-semibold">Product</Link></li>
                         <li><Link to="/blog" className="hover:text-secondary font-semibold">Blogs</Link></li>
+                        <li><Link to="/contact" className="hover:text-secondary font-semibold">Contacts</Link></li>
                     </ul>
                 </nav>
 
@@ -160,39 +188,54 @@ function Header() {
                         </span>
                     )}
 
-                    <div className="relative group cart-wrapper">
-                        <Link to="/cart">
+                    <div
+                        className="relative group cart-wrapper"
+                        onMouseEnter={() => setIsHovered(true)}
+                        onMouseLeave={() => setIsHovered(false)}
+                    >
+                        <Link to="/cart" className="relative">
                             <img src="/assets/images/cart-shopping.svg" alt="Cart" className="h-6 w-6 group-hover:scale-120" />
+                            {cartItems.length > 0 && (
+                                <span className="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center transform translate-x-1/2 -translate-y-1/2">
+                                    {cartItems.length} {/* Tổng số đơn hàng */}
+                                </span>
+                            )}
                         </Link>
                         {/* Cart dropdown */}
-                        <div className="absolute right-0 mt-1 w-80 bg-white shadow-lg p-4 rounded hidden group-hover:block">
-                            <div className="space-y-4">
-                                {/* product item */}
-                                <div className="flex items-center justify-between pb-4 border-b border-gray-line">
-                                    <div className="flex items-center">
-                                        <img src="/assets/images/single-product/1.jpg" alt="Product" className="h-12 w-12 object-cover rounded mr-2" />
-                                        <div>
-                                            <p className="font-semibold">Summer black dress</p>
-                                            <p className="text-sm">Quantity: 1</p>
-                                        </div>
-                                    </div>
-                                    <p className="font-semibold">$25.00</p>
+                        {isHovered && (
+                            <div className="absolute right-0 mt-1 w-80 bg-white shadow-lg p-4 rounded">
+                                <div className="space-y-4">
+                                    {cartItems.length > 0 ? (
+                                        cartItems.map((item, index) => (
+                                            <div key={index} className="flex items-center justify-between pb-4 border-b border-gray-line">
+                                                <div className="flex items-center">
+                                                    <img
+                                                        src={`${ApiImages}/images/product/${item.thumbnail}`}
+                                                        alt={item.name}
+                                                        className="w-16 h-16 lg:w-32 lg:h-32 object-contain mb-4 rounded-md"
+                                                    />
+                                                    <div>
+                                                        <p className="font-semibold">{item.name}</p>
+                                                        <p className="text-sm">Quantity: {item.qty}</p>
+                                                    </div>
+                                                </div>
+                                                <p className="font-semibold">${item.priceroot * item.qty}</p>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-center">Giỏ hàng trống</p>
+                                    )}
                                 </div>
-                                {/* product item */}
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center">
-                                        <img src="/assets/images/single-product/2.jpg" alt="Product" className="h-12 w-12 object-cover rounded mr-2" />
-                                        <div>
-                                            <p className="font-semibold">Black suit</p>
-                                            <p className="text-sm">Quantity: 1</p>
-                                        </div>
-                                    </div>
-                                    <p className="font-semibold">$125.00</p>
-                                </div>
+                                <Link
+                                    to="/cart"
+                                    className="block text-center mt-4 border border-primary bg-primary hover:bg-transparent text-white hover:text-primary py-2 rounded-full font-semibold"
+                                >
+                                    Go to Cart
+                                </Link>
                             </div>
-                            <Link to="/cart" className="block text-center mt-4 border border-primary bg-primary hover:bg-transparent text-white hover:text-primary py-2 rounded-full font-semibold">Go to Cart</Link>
-                        </div>
+                        )}
                     </div>
+
 
                     <a id="search-icon" href="javascript:void(0);" className="text-white hover:text-secondary group">
                         <img src="/assets/images/search-icon.svg" alt="Search" className="h-6 w-6 transition-transform transform group-hover:scale-120" />
