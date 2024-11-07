@@ -10,9 +10,26 @@ class ContactController extends Controller
     // Hiển thị danh sách tất cả các contact
     public function index()
     {
-        $contacts = Contact::all();
-        return view('contact.index', compact('contacts'));
+        try {
+            $contacts = Contact::select(
+                'id',
+                'user_id',
+                'title',
+                'content',
+                'reply_id',
+                'created_at',
+                'created_by',
+                'updated_at',
+                'updated_by',
+                'status'
+            )->get();
+
+            return response()->json($contacts, 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Server Error', 'message' => $e->getMessage()], 500);
+        }
     }
+
 
     // Hiển thị chi tiết một contact cụ thể
     public function show($id)

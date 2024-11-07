@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import Header from '../components/header';
-import Footer from '../components/footer';
-import UserService from '../Service/UserService'; // Thêm import cho UserService
+import UserService from '../../Service/UserService';
 
-const Login = () => {
+const Login = ({ onLogin }) => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
-    const [loading, setLoading] = useState(false); // Thêm trạng thái loading
-    const navigate = useNavigate(); // Khai báo useNavigate để điều hướng
+    const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -19,35 +17,35 @@ const Login = () => {
             return;
         }
 
-        setLoading(true); // Bắt đầu loading
+        setLoading(true);
 
         try {
             const response = await UserService.login({ username, password });
-            const token = response.token;
-            const userId = response.user.id;
-            const name = response.user.name;
-            console.log(response);
+            if (response && response.token && response.user) {
+                const { token, user } = response;
 
-            localStorage.setItem('authToken', token);
-            localStorage.setItem('userId', userId);
-            localStorage.setItem('name', name);
+                localStorage.setItem('authToken', token);
+                localStorage.setItem('userId', user.id);
+                localStorage.setItem('name', user.name);
 
-            navigate('/'); // Điều hướng đến Dashboard sau khi đăng nhập thành công
+                onLogin(); // Gọi hàm onLogin để cập nhật trạng thái xác thực
+                navigate('/'); // Chuyển hướng đến trang Dashboard
+            } else {
+                throw new Error('Thông tin đăng nhập không chính xác.');
+            }
         } catch (error) {
             setErrorMessage('Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.');
             console.error('Error logging in:', error);
         } finally {
-            setLoading(false); // Kết thúc loading
+            setLoading(false);
         }
     };
 
     return (
         <div>
-            <Header />
             <section id="register-login-page" className="bg-gray-100 py-16">
                 <div className="container mx-auto px-10">
                     <div className="flex flex-col md:flex-row gap-4">
-                        {/* Login Form */}
                         <div className="md:w-1/2 bg-white rounded-lg shadow-md p-8 ml-60">
                             <h2 className="text-3xl font-semibold mb-6 text-center">Login</h2>
                             <form onSubmit={handleLogin}>
@@ -74,6 +72,7 @@ const Login = () => {
                                         onChange={(e) => setPassword(e.target.value)}
                                         className="w-full px-4 py-2 border rounded-lg focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
                                         required
+                                        autoComplete="current-password"
                                     />
                                 </div>
 
@@ -87,7 +86,7 @@ const Login = () => {
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="bg-primary text-white border border-primary hover:bg-transparent hover:text-primary py-2 px-4 rounded-full w-full"
+                                    className="bg-primary text-black border border-primary hover:bg-transparent hover:text-primary py-2 px-4 rounded-full w-full"
                                 >
                                     {loading ? 'Loading...' : 'Login'}
                                 </button>
@@ -96,7 +95,6 @@ const Login = () => {
                     </div>
                 </div>
             </section>
-            <Footer />
         </div>
     );
 }

@@ -103,8 +103,8 @@ class UserController extends Controller
 
     public function index()
     {
-        $users = User::where('status','!=',0)
-            ->select("id","name","email","phone","address","gender","created_at","status")
+        $users = User::where('status','!=',2)
+            ->select("id","name","email","phone","address","gender","created_at","status","roles")
             ->get();
             if($users->isEmpty()) {
                 $result = [
@@ -134,6 +134,93 @@ class UserController extends Controller
 
     // Trả về thông tin người dùng
     return response()->json($user);
+}
+
+public function update(Request $request, $id)
+{
+    $user = User::findOrFail($id);
+
+    // Validate dữ liệu
+    $request->validate([
+        'username' => 'required|string|max:255',
+        'email' => 'required|email',
+        'password' => 'nullable|string|min:8|confirmed',
+        'avatar' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
+    ]);
+
+    // Cập nhật thông tin người dùng
+    $user->username = $request->input('username');
+    $user->email = $request->input('email');
+
+    if ($request->filled('password')) {
+        $user->password = bcrypt($request->input('password'));
+    }
+
+    // Nếu có avatar, xử lý upload
+    if ($request->hasFile('avatar')) {
+        $avatarPath = $request->file('avatar')->store('images/avt', 'public');
+        $user->avatar = $avatarPath;
+    }
+
+    $user->save();
+
+    return response()->json(['message' => 'User updated successfully'], 200);
+}
+
+
+public function status($id)
+{
+    $user = User::find($id);
+
+    if (!$user) {
+        return response()->json(['message' => 'User not found'], 404);
+    }
+
+    $user->status = !$user->status;
+    $user->save();
+
+    return response()->json(['message' => 'User status updated', 'status' => $user->status]);
+}
+
+public function delete($id)
+{
+    $user = User::find($id);
+
+    if (!$user) {
+        return response()->json(['message' => 'User not found'], 404);
+    }
+
+    $user->status = 0; // Giả định là 0 nghĩa là "đã xóa mềm"
+    $user->save();
+
+    return response()->json(['message' => 'User deleted successfully']);
+}
+
+public function restore($id)
+{
+    $user = User::withTrashed()->find($id);
+
+    if (!$user) {
+        return response()->json(['message' => 'User not found'], 404);
+    }
+
+    $user->status = 1; // Khôi phục trạng thái
+    $user->save();
+
+    return response()->json(['message' => 'User restored successfully']);
+}
+
+public function destroy($id)
+{
+    $user = User::find($id);
+
+    if (!$user) {
+        return response()->json(['message' => 'User not found'], 404);
+    }
+
+    $user->delete();
+
+    return response()->json(['message' => 'User permanently deleted']);
 }
 
 }

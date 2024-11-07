@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import Sidebar from './../src/components/Sidebar';
 import Dashboard from './pages/dashboard/Dashboard';
-import Products from './pages/product/product';
+import Contact from './pages/Contact/Contact';
 import Categories from './pages/category/categories';
 import Orders from './pages/order/order';
 import Users from './pages/user/user';
-import RegisterAdmin from './pages/register/registeradmin';
+
 import Banner from './pages/banner/banner';
 import Brand from './pages/brand/brand';
 import AddBrand from './pages/brand/Addbrand';
@@ -25,85 +25,109 @@ import ProductStore from './pages/productstore/ProductStore';
 import EditProductStore from './pages/productstore/EditProductStore';
 import AddProduct from './pages/product/Addproduct';
 import EditProduct from './pages/product/Editproduct';
-import Post from './pages/post/post'
-import Addpost from './pages/post/Addpost';
+import Post from './pages/post/post';
+import AddPost from './pages/post/Addpost';
 import EditPost from './pages/post/EditPost';
+import Login from './pages/auth/login';
+import OrderDetail from './pages/order/OrderDetail';
+import Menu from './pages/menu/Menu';
+import AccountSettings from './pages/profile/AccountSettings';
+
 function App() {
-    // Trạng thái mở/đóng Sidebar
+    // Trạng thái mở/đóng Sidebar và trạng thái đăng nhập
     const [isOpen, setIsOpen] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(false); // Trạng thái xác thực người dùng
+
+    // Kiểm tra nếu người dùng đã đăng nhập từ localStorage khi load lại trang
+    useEffect(() => {
+        const authStatus = localStorage.getItem('isAuthenticated');
+        if (authStatus === 'true') {
+            setIsAuthenticated(true);
+        }
+    }, []);
 
     // Hàm để toggle Sidebar
     const toggleSidebar = () => {
         setIsOpen(!isOpen);
     };
 
+    const handleLogin = () => {
+        setIsAuthenticated(true); // Cập nhật trạng thái khi người dùng đăng nhập thành công
+        localStorage.setItem('isAuthenticated', 'true'); // Lưu trạng thái đăng nhập vào localStorage
+    };
+
+    const handleLogout = () => {
+        setIsAuthenticated(false); // Cập nhật trạng thái khi người dùng đăng xuất
+        localStorage.removeItem('isAuthenticated'); // Xóa trạng thái đăng nhập khỏi localStorage
+    };
+
     return (
         <Router>
             <div className="flex">
-                {/* Nút để mở/đóng Sidebar trên thiết bị nhỏ */}
-                <button
-                    className="md:hidden p-4"
-                    onClick={toggleSidebar}
-                >
-                    <svg
-                        className="w-6 h-6"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M4 6h16M4 12h16M4 18h16"
-                        ></path>
-                    </svg>
+                <button className="md:hidden p-4" onClick={toggleSidebar}>
+                    {/* SVG icon */}
                 </button>
 
-                {/* Sidebar với trạng thái mở/đóng */}
-                <Sidebar isOpen={isOpen} />
+                {isAuthenticated && <Sidebar isOpen={isOpen} />}
 
-                {/* Nội dung chính */}
                 <div className="flex-1 ml-64 p-4">
                     <Routes>
-                        <Route path="/" element={<Dashboard />} />
-                        <Route path="/product" element={<Product />} />
-                        <Route path="/product/add" element={<AddProduct />} />
-                        <Route path="/product/edit/:id" element={<EditProduct />} />
+                        <Route
+                            path="/"
+                            element={
+                                isAuthenticated ? <Dashboard /> : <Navigate to="/login" />
+                            }
+                        />
+                        <Route
+                            path="/login"
+                            element={<Login onLogin={handleLogin} />}
+                        />
 
+                        {/* Các route khác sẽ yêu cầu người dùng phải đăng nhập */}
+                        {isAuthenticated && (
+                            <>
+                                <Route path="/product" element={<Product />} />
+                                <Route path="/product/add" element={<AddProduct />} />
+                                <Route path="/product/edit/:id" element={<EditProduct />} />
 
-                        <Route path="/productsale" element={<ProductSale />} />
-                        <Route path="/productsale/edit/:id" element={<EditProductSale />} />
+                                <Route path="/productsale" element={<ProductSale />} />
+                                <Route path="/productsale/edit/:id" element={<EditProductSale />} />
 
+                                <Route path="/productstore" element={<ProductStore />} />
+                                <Route path="/productstore/edit/:id" element={<EditProductStore />} />
 
-                        <Route path="/productstore" element={<ProductStore />} />
-                        <Route path="/productstore/edit/:id" element={<EditProductStore />} />
+                                <Route path="/categories" element={<Categories />} />
+                                <Route path="/brand" element={<Brand />} />
+                                <Route path="/brand/add" element={<AddBrand />} />
+                                <Route path="/brand/edit/:id" element={<EditBrand />} />
 
+                                <Route path="/order" element={<Orders />} />
+                                <Route path="/order/:id" element={<OrderDetail />} />
 
-                        <Route path="/categories" element={<Categories />} />
-                        <Route path="/brand" element={<Brand />} />
-                        <Route path="/brand/add" element={<AddBrand />} />
-                        <Route path="/brand/edit/:id" element={<EditBrand />} />
-                        <Route path="/order" element={<Orders />} />
-                        <Route path="/user" element={<Users />} />
-                        <Route path="/admin/register" element={<RegisterAdmin />} />
+                                <Route path="/user" element={<Users />} />
+                            
 
-                        <Route path="/banner" element={<Banner />} />
-                        <Route path="/banner/add" element={<AddBanner />} />
-                        <Route path="/banner/edit/:id" element={<EditBanner />} />
+                                <Route path="/banner" element={<Banner />} />
+                                <Route path="/banner/add" element={<AddBanner />} />
+                                <Route path="/banner/edit/:id" element={<EditBanner />} />
 
-                        <Route path="/config" element={<Config />} />
+                                <Route path="/config" element={<Config />} />
+                                <Route path="/bin" element={<RecycleBin />} />
 
-                        <Route path="/bin" element={<RecycleBin />} />
+                                <Route path="/topic" element={<Topic />} />
+                                <Route path="/topic/add" element={<AddTopic />} />
+                                <Route path="/topic/edit/:id" element={<EditTopic />} />
 
-                        <Route path="/topic" element={<Topic />} />
-                        <Route path="/topic/add" element={<AddTopic />} />
-                        <Route path="/topic/edit/:id" element={<EditTopic />} />
+                                <Route path="/post" element={<Post />} />
+                                <Route path="/post/add" element={<AddPost />} />
+                                <Route path="/post/edit/:id" element={<EditPost />} />
 
-                        <Route path="/post" element={<Post />} />
-                        <Route path="/post/add" element={<Addpost />} />
-                        <Route path="/post/edit/:id" element={<EditPost />} />
+                                <Route path="/menu" element={<Menu />} />
+
+                                <Route path="/account-settings" element={<AccountSettings/>} />
+                                <Route path="/contact" element={<Contact/>} />
+                            </>
+                        )}
                     </Routes>
                 </div>
             </div>

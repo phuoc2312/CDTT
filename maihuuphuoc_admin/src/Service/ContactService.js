@@ -2,8 +2,9 @@ import Api from "../Api/Api";
 
 const ContactService = {
     // Lấy danh sách liên hệ
+
     getList: () => {
-        return Api.get("/contact");
+        return Api.get("/contact");  // Gọi API lấy danh sách liên hệ
     },
 
     // Lấy danh sách liên hệ trong thùng rác

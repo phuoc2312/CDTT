@@ -2,6 +2,7 @@ import React from 'react';
 import { FaUsers, FaWallet, FaShoppingCart, FaComments } from 'react-icons/fa';
 import Orders from '../../pages/order/order'; // Đảm bảo rằng Orders được xuất đúng cách từ file 'Order.js'
 import Header from '../../components/header'; // Import Header component
+import Menu from '../menu/Menu';
 
 const Dashboard = () => {
   return (
@@ -55,7 +56,7 @@ const Dashboard = () => {
             </div>
           </div>
           {/* Additional content */}
-          <Orders /> 
+          <Orders />
         </div>
       </main>
     </>

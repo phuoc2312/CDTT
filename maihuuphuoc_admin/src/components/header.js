@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';  // Updated import
 
 const Header = () => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const navigate = useNavigate();  // Updated hook
 
   const toggleProfileMenu = () => {
     setIsProfileMenuOpen(!isProfileMenuOpen);
@@ -10,6 +12,17 @@ const Header = () => {
 
   const toggleNotifications = () => {
     setIsNotificationsOpen(!isNotificationsOpen);
+  };
+
+  const handleLogout = () => {
+    // Xóa các mục thông tin khỏi localStorage
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('name');
+    localStorage.removeItem('userId');
+
+    // Sau khi xóa, bạn có thể chuyển hướng người dùng đến trang đăng nhập
+    navigate('/login');
   };
 
   return (
@@ -21,6 +34,7 @@ const Header = () => {
             <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd"></path>
           </svg>
         </button>
+
         {/* Search input */}
         <div className="flex flex-1 justify-center lg:mr-32">
           <div className="relative w-full max-w-lg">
@@ -32,6 +46,7 @@ const Header = () => {
             </div>
           </div>
         </div>
+
         <ul className="flex items-center space-x-6">
           {/* Theme toggler */}
           <li>
@@ -41,6 +56,7 @@ const Header = () => {
               </svg>
             </button>
           </li>
+
           {/* Notifications menu */}
           <li className="relative">
             <button className="p-2 rounded-md focus:outline-none focus:shadow-outline-purple" aria-label="Notifications" aria-haspopup="true" onClick={toggleNotifications}>
@@ -53,24 +69,17 @@ const Header = () => {
             {isNotificationsOpen && (
               <ul className="absolute right-0 w-56 p-2 mt-2 space-y-2 text-gray-600 bg-white border border-gray-100 rounded-md shadow-md dark:border-gray-700 dark:text-gray-300 dark:bg-gray-700" aria-label="submenu">
                 <li className="flex">
-                  <a className="flex items-center justify-between w-full px-2 py-1 text-sm font-semibold transition-colors duration-150 rounded-md hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-800 dark:hover:text-gray-200" href="#">
+                  <a className="flex items-center justify-between w-full px-2 py-1 text-sm font-semibold transition-colors duration-150 rounded-md hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-800 dark:hover:text-gray-200" href="/contact">
                     <span>Messages</span>
                     <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-600 bg-red-100 rounded-full dark:text-red-100 dark:bg-red-600">
                       13
                     </span>
                   </a>
                 </li>
-                <li className="flex">
-                  <a className="flex items-center justify-between w-full px-2 py-1 text-sm font-semibold transition-colors duration-150 rounded-md hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-800 dark:hover:text-gray-200" href="#">
-                    <span>Order</span>
-                    <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-600 bg-red-100 rounded-full dark:text-red-100 dark:bg-red-600">
-                      2
-                    </span>
-                  </a>
-                </li>
               </ul>
             )}
           </li>
+
           {/* Profile menu */}
           <li className="relative">
             <button className="p-1 rounded-full focus:shadow-outline-purple focus:outline-none" aria-label="Account" aria-haspopup="true" onClick={toggleProfileMenu}>
@@ -80,7 +89,7 @@ const Header = () => {
             {isProfileMenuOpen && (
               <ul className="absolute right-0 w-56 p-2 mt-2 space-y-2 text-gray-600 bg-white border border-gray-100 rounded-md shadow-md dark:border-gray-700 dark:text-gray-300 dark:bg-gray-700" aria-label="submenu">
                 <li className="flex">
-                  <a className="flex items-center w-full px-2 py-1 text-sm font-semibold transition-colors duration-150 rounded-md hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-800 dark:hover:text-gray-200" href="#">
+                  <a className="flex items-center w-full px-2 py-1 text-sm font-semibold transition-colors duration-150 rounded-md hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-800 dark:hover:text-gray-200" href="/account-settings">
                     <svg className="w-4 h-4 mr-3" aria-hidden="true" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
                       <path d="M4 6h16M4 12h16m-7 6h7" />
                     </svg>
@@ -88,11 +97,15 @@ const Header = () => {
                   </a>
                 </li>
                 <li className="flex">
-                  <a className="flex items-center w-full px-2 py-1 text-sm font-semibold transition-colors duration-150 rounded-md hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-800 dark:hover:text-gray-200" href="#">
+                  <a
+                    className="flex items-center w-full px-2 py-1 text-sm font-semibold transition-colors duration-150 rounded-md hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+                    href="#"
+                    onClick={handleLogout}
+                  >
                     <svg className="w-4 h-4 mr-3" aria-hidden="true" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
-                      <path d="M17 10l4.5 4.5L17 19M7 19l-4.5-4.5L7 10" />
+                      <path d="M17 10l4.5 4.5L17 19M7 19l-4.5-4.5L7 10M12 3v18" />
                     </svg>
-                    <span>Logout</span>
+                    <span>Log out</span>
                   </a>
                 </li>
               </ul>

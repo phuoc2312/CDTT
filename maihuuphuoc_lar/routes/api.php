@@ -127,20 +127,22 @@ Route::prefix("category")->group(function() {
         Route::delete("/forceDelete/{id}", [CategoryController::class, "forceDelete"]);
 });
 
-// UC: Quản lý menu
+//UC: Quản lý menu
 Route::prefix("menu")->group(function() {
     Route::get("/", [MenuController::class, "index"]);
     Route::get("/trash", [MenuController::class, "trash"]);
     Route::get("/show/{id}", [MenuController::class, "show"]);
     Route::post("/store", [MenuController::class, "store"]);
     Route::post("/update/{id}", [MenuController::class, "update"]);
-    Route::get("/status/{id}", [MenuController::class, "status"]);
+    Route::put('/update/status/{id}', [MenuController::class, 'updateStatus']);
     Route::get("/delete/{id}", [MenuController::class, "delete"]);
-Route::get("/restore/{id}", [MenuController::class, "restore"]);
+    Route::get("/restore/{id}", [MenuController::class, "restore"]);
     Route::delete("/destroy/{id}", [MenuController::class, "destroy"]);
 });
 
 // UC: Quản lý liên hệ
+
+
 Route::prefix("contact")->group(function() {
     Route::get("/", [ContactController::class, "index"]);
     Route::get("/trash", [ContactController::class, "trash"]);
@@ -152,6 +154,8 @@ Route::prefix("contact")->group(function() {
     Route::delete("/destroy/{id}", [ContactController::class, "destroy"]);
     Route::post("/store", [ContactController::class, "store"]);
 });
+
+
 
 // UC: Quản lý bài viết
 Route::prefix("post")->group(function() {
@@ -208,9 +212,12 @@ Route::prefix('order')->group(function() {
     Route::get('/', [OrderController::class, 'index']); // Danh sách đơn hàng
     Route::get('/show/{id}', [OrderController::class, 'show']); // Hiển thị đơn hàng
     Route::get('/trash', [OrderController::class, 'trash']); // Đơn hàng trong thùng rác
-    Route::get('/status/{id}', [OrderController::class, 'status']); // Thay đổi trạng thái đơn hàng
-    Route::post('/store', [OrderController::class, 'store']); // Tạo đơn hàng mới
-    Route::delete('/destroy/{id}', [OrderController::class, 'destroy']); // Xóa đơn hàng
+    Route::put('/update/status/{id}', [OrderController::class, 'status']);
+     Route::post('/store', [OrderController::class, 'store']); // Tạo đơn hàng mới
+     Route::get("/delete/{id}", [OrderController::class, "delete"]);
+     Route::get("/restore/{id}", [OrderController::class, "restore"]);
+
+     Route::delete('/destroy/{id}', [OrderController::class, 'destroy']); // Xóa đơn hàng
 });
 
 

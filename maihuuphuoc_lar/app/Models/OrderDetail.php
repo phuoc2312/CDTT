@@ -11,5 +11,8 @@ class OrderDetail extends Model
     protected $table='orderdetail';
     public $timestamps = false; // Tắt timestamps tự động
 
-
+    public function product()
+    {
+        return $this->belongsTo(Product::class, 'product_id');
+    }
 }

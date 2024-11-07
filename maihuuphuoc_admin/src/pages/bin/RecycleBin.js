@@ -6,6 +6,8 @@ import BannerService from '../../Service/BannerService'; // Service cho banner
 import TopicService from '../../Service/TopicService'; // Service cho topic
 import PostService from '../../Service/PostService'; // Service cho bài viết (post)
 import Header from '../../components/header'; // Component Header
+import OrderService from '../../Service/OrderService';
+import MenuService from '../../Service/MenuService';
 
 const RecycleBin = () => {
   const [activeTab, setActiveTab] = useState('categories'); // State để theo dõi tab đang chọn
@@ -22,47 +24,61 @@ const RecycleBin = () => {
       switch (activeTab) {
         case 'categories':
           result = await CategoryService.getDeleted();
-          console.log('API Response for Categories:', result);
           break;
         case 'brands':
           result = await BrandService.getDeleted();
-          console.log('API Response for Brands:', result);
           break;
         case 'banners':
           result = await BannerService.getDeleted();
-          console.log('API Response for Banners:', result);
           break;
         case 'topics':
           result = await TopicService.getDeleted();
-          console.log('API Response for Topics:', result);
           break;
         case 'post':
-          result = await PostService.getDeleted(); // Corrected API call for posts
-          console.log('API Response for Posts:', result);
+          result = await PostService.getDeleted();
           break;
+        case 'order':
+          result = await OrderService.getDeleted();
+          break;
+          case 'menu':
+            result = await MenuService.getDeleted();
+            break;
         default:
-          result = { categories: [] };
+          return; // or setDeletedItems([]) to avoid confusion
       }
 
-      // Lấy danh sách các mục đã xóa từ categories, brands, banners, topics hoặc posts
-      if (result && result.categories) {
-        setDeletedItems(result.categories);
-      } else if (result && result.brands) {
-        setDeletedItems(result.brands);
-      } else if (result && result.banners) {
-        setDeletedItems(result.banners);
-      } else if (result && result.topics) {
-        setDeletedItems(result.topics);
-      } else if (result && result.posts) {
-        setDeletedItems(result.posts); // Handle post items
+      // Log the entire result for debugging
+      console.log('API Response:', result);
+
+      // Check for the specific item types based on the response
+      if (result) {
+        if (Array.isArray(result)) {
+          setDeletedItems(result); // Set deleted items directly if it's an array
+        } else if (result.categories) {
+          setDeletedItems(result.categories);
+        } else if (result.brands) {
+          setDeletedItems(result.brands);
+        } else if (result.banners) {
+          setDeletedItems(result.banners);
+        } else if (result.topics) {
+          setDeletedItems(result.topics);
+        } else if (result.posts) {
+          setDeletedItems(result.posts);
+        } else if (result.order) {
+          setDeletedItems(result.order);
+        } else if (result.menu) {
+          setDeletedItems(result.menu);
+        }
       } else {
-        setDeletedItems([]);
         console.error('No deleted items found');
+        setDeletedItems([]);
       }
     } catch (error) {
       console.error('Error fetching deleted items:', error);
+      setDeletedItems([]); // Ensure to clear items on error
     }
   };
+
 
   // Hàm khôi phục mục đã xóa
   const handleRestoreItem = async (id) => {
@@ -83,6 +99,12 @@ const RecycleBin = () => {
             break;
           case 'post':
             await PostService.restore(id);
+            break;
+          case 'order':
+            await OrderService.restore(id);
+            break;
+            case 'menu':
+            await MenuService.restore(id);
             break;
           default:
             break;
@@ -116,6 +138,12 @@ const RecycleBin = () => {
           case 'post':
             await PostService.destroy(id); // Xóa vĩnh viễn bài viết
             break;
+          case 'order':
+            await OrderService.destroy(id); // Xóa vĩnh viễn bài viết
+            break;
+            case 'menu':
+            await MenuService.destroy(id); // Xóa vĩnh viễn bài viết
+            break;
           default:
             break;
         }
@@ -123,7 +151,7 @@ const RecycleBin = () => {
         alert('Xóa vĩnh viễn thành công.');
       } catch (error) {
         console.error('Error deleting item permanently:', error);
-        alert('Xóa vĩnh viễn không thành công.');
+        alert('Lỗi khi xóa đơn hàng: ' + error.response.data.message); 
       }
     }
   };
@@ -163,6 +191,18 @@ const RecycleBin = () => {
             className={`px-4 py-2 rounded ${activeTab === 'post' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}
           >
             Post
+          </button>
+          <button
+            onClick={() => setActiveTab('order')}
+            className={`px-4 py-2 rounded ${activeTab === 'order' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}
+          >
+            Order
+          </button>
+          <button
+            onClick={() => setActiveTab('menu')}
+            className={`px-4 py-2 rounded ${activeTab === 'menu' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}
+          >
+            Menu
           </button>
         </div>
         {deletedItems.length === 0 ? (

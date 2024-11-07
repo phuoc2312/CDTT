@@ -21,37 +21,76 @@ class OrderController extends Controller
     // Hiển thị danh sách đơn hàng
     public function index()
     {
-        $orders = Order::all();
+        // Retrieve orders where status is not equal to 2
+        $orders = Order::where('status', '!=', 2)->get();
 
+        // Check if the collection is empty
         if ($orders->isEmpty()) {
             return response()->json(['message' => 'Không có đơn hàng nào'], 200);
         }
 
+        // Return the list of orders as JSON
         return response()->json($orders);
     }
 
-    // Hiển thị chi tiết đơn hàng theo ID
     public function show($id)
     {
-        $order = Order::findOrFail($id);
+        // Lấy đơn hàng cùng với chi tiết và hình ảnh sản phẩm
+        $order = Order::with(['orderDetails.product.images'])->findOrFail($id);
+
         return response()->json($order);
     }
+
 
     // Chuyển đơn hàng vào thùng rác
     public function trash()
     {
-        $order = Order::where('status', 2)->get(); // Giả sử status = 2 là đã xóa
-        return response()->json($order);
+        $orders = Order::where('status', 2)
+            ->select('id', 'name', 'phone', 'email', 'address', 'created_at', 'updated_at') // Include more fields as needed
+            ->get();
+
+        return response()->json($orders);
     }
 
     // Thay đổi trạng thái của đơn hàng
     public function status($id)
     {
         $order = Order::findOrFail($id);
-        $order->status = !$order->status; // Đổi trạng thái từ 1 thành 0 hoặc ngược lại
+
+        // Cập nhật trạng thái theo thứ tự: 1 -> 0 -> 3 -> 4 -> 1
+        switch ($order->status) {
+            case 1:
+                $order->status = 0; // Đổi từ "Chưa xử lý" sang "Đã xử lý"
+                break;
+            case 0:
+                $order->status = 3; // Đổi từ "Đã xử lý" sang "Đã hủy"
+                break;
+            case 3:
+                $order->status = 4; // Đổi từ "Đã hủy" sang "Đã giao"
+                break;
+            case 4:
+                $order->status = 1; // Đổi từ "Đã giao" sang "Chưa xử lý"
+                break;
+            default:
+                $order->status = 1; // Mặc định về "Chưa xử lý" nếu trạng thái không nằm trong các giá trị trên
+                break;
+        }
+
         $order->save();
+
         return response()->json(['message' => 'Trạng thái đã được cập nhật', 'order' => $order]);
     }
+    public function delete($id)
+    {
+        $order = Order::findOrFail($id);
+
+        // Update the status to 2 to move it to trash
+        $order->status = 2;
+        $order->save();
+
+        return response()->json(['message' => 'Đơn hàng đã được chuyển vào thùng rác', 'order' => $order]);
+    }
+
 
     // Tạo mới đơn hàng
     // public function store(Request $request)
@@ -180,46 +219,53 @@ public function store(Request $request)
 }
 
 
-    // Xóa đơn hàng (di chuyển vào thùng rác)
-    public function destroy($id)
-    {
-        $order = Order::findOrFail($id);
-        $order->status = 2; // Chuyển status = 2 để chỉ ra là đã xóa
-        $order->save();
-
-        return response()->json(['message' => 'Đơn hàng đã được chuyển vào thùng rác']);
-    }
-    // Cập nhật thông tin chi tiết đơn hàng
-public function update(Request $request, $id)
+public function destroy($id)
 {
-    // Validate the incoming request data
-    $request->validate([
-        'qty' => 'required|integer|min:1',
-        'price' => 'required|numeric',
-        'discount' => 'nullable|numeric'
-    ]);
+    $order = Order::find($id);
 
-    // Tìm chi tiết đơn hàng
-    $orderDetail = OrderDetail::find($id);
-
-    if (!$orderDetail) {
+    if ($order === null) {
         return response()->json([
             'status' => false,
-            'message' => 'Chi tiết đơn hàng không tồn tại.'
+            'message' => 'Không tìm thấy dữ liệu',
+            'post' => null
         ], 404);
     }
 
-    // Cập nhật thông tin
-    $orderDetail->qty = $request->qty;
-    $orderDetail->price = $request->price;
-    $orderDetail->amount = ($orderDetail->price * $orderDetail->qty) - ($request->discount ?? 0);
-    $orderDetail->discount = $request->discount ?? $orderDetail->discount;
-    $orderDetail->save();
+    try {
+        // Xóa các chi tiết đơn hàng liên quan
+        $order->details()->delete(); // Giả sử bạn đã định nghĩa mối quan hệ này trong model Order
+
+        // Sau đó xóa đơn hàng
+        $order->delete();
+    } catch (\Exception $e) {
+        // Log lỗi nếu có
+        \Log::error('Lỗi khi xóa đơn hàng: ' . $e->getMessage());
+
+        return response()->json([
+            'status' => false,
+            'message' => 'Lỗi khi xóa đơn hàng: ' . $e->getMessage(),
+        ], 500);
+    }
 
     return response()->json([
         'status' => true,
-        'message' => 'Chi tiết đơn hàng đã được cập nhật thành công.',
-        'order_detail' => $orderDetail
+        'message' => 'Đơn hàng đã được xóa vĩnh viễn',
+        'post' => $order
     ], 200);
 }
+
+    public function restore($id)
+    {
+        $order = Order::findOrFail($id);
+
+        if ($order->status == 2) { // Chỉ khôi phục nếu trạng thái là 2 (đã xóa)
+            $order->status = 1; // Đặt trạng thái về 1 (Chưa xử lý)
+            $order->save();
+            return response()->json(['message' => 'Đơn hàng đã được khôi phục', 'order' => $order], 200);
+        }
+
+        return response()->json(['message' => 'Không thể khôi phục đơn hàng này'], 400);
+    }
+
+
 }
