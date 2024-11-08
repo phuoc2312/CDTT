@@ -11,36 +11,50 @@ const Login = ({ onLogin }) => {
 
     const handleLogin = async (e) => {
         e.preventDefault();
-
+    
         if (!username || !password) {
             setErrorMessage('Vui lòng nhập tên đăng nhập và mật khẩu.');
             return;
         }
-
+    
         setLoading(true);
-
+    
         try {
+            // Gọi API đăng nhập
             const response = await UserService.login({ username, password });
-            if (response && response.token && response.user) {
-                const { token, user } = response;
-
-                localStorage.setItem('authToken', token);
-                localStorage.setItem('userId', user.id);
-                localStorage.setItem('name', user.name);
-
-                onLogin(); // Gọi hàm onLogin để cập nhật trạng thái xác thực
-                navigate('/'); // Chuyển hướng đến trang Dashboard
-            } else {
-                throw new Error('Thông tin đăng nhập không chính xác.');
+            
+            // Kiểm tra phản hồi API
+            console.log('Full API response:', response); // Xem dữ liệu trả về từ API
+    
+            // Kiểm tra dữ liệu
+            if (!response || !response.token || !response.user) {
+                throw new Error('Không nhận được phản hồi đúng từ server.');
             }
+    
+            const { token, user } = response;
+    
+            // Kiểm tra vai trò của user
+            if (user.roles !== 'admin') {
+                throw new Error('Chỉ tài khoản admin mới có quyền đăng nhập.');
+            }
+    
+            // Lưu thông tin người dùng và token vào localStorage
+            localStorage.setItem('authToken', token);
+            localStorage.setItem('userId', user.id);
+            localStorage.setItem('name', user.name);
+    
+            // Tiến hành login thành công
+            onLogin();
+            navigate('/');
         } catch (error) {
-            setErrorMessage('Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.');
+            // Xử lý lỗi
+            setErrorMessage(error.message || 'Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.');
             console.error('Error logging in:', error);
         } finally {
             setLoading(false);
         }
     };
-
+    
     return (
         <div>
             <section id="register-login-page" className="bg-gray-100 py-16">
@@ -90,6 +104,12 @@ const Login = ({ onLogin }) => {
                                 >
                                     {loading ? 'Loading...' : 'Login'}
                                 </button>
+                                <div className="mt-4 text-center">
+                                    <span className="text-gray-700">Don't have an account? </span>
+                                    <Link to="/register" className="text-primary hover:underline">
+                                        Register here
+                                    </Link>
+                                </div>
                             </form>
                         </div>
                     </div>
@@ -97,6 +117,7 @@ const Login = ({ onLogin }) => {
             </section>
         </div>
     );
-}
+};
 
 export default Login;
+

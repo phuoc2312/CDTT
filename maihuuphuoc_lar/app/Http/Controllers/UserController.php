@@ -78,7 +78,7 @@ class UserController extends Controller
                 // Nếu bạn muốn thêm các trường khác, có thể thêm ở đây
                 'email' => $user->email, // Ví dụ: email
                 'phone' => $user->phone, // Ví dụ: số điện thoại
-                // Thêm các trường khác nếu cần thiết
+                'roles' => $user->roles,
             ]
         ]);
     }

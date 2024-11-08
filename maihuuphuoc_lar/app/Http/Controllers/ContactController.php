@@ -31,24 +31,44 @@ class ContactController extends Controller
     }
 
 
-    // Hiển thị chi tiết một contact cụ thể
-    public function show($id)
-    {
+
+public function show($id)
+{
+    try {
         $contact = Contact::findOrFail($id);
-        return view('contact.show', compact('contact'));
+        return response()->json($contact, 200);
+    } catch (\Exception $e) {
+        return response()->json(['error' => 'Contact not found'], 404);
     }
+}
 
     // Xử lý trả lời một contact
     public function reply(Request $request, $id)
     {
-        $contact = Contact::findOrFail($id);
-        $contact->reply_id = $request->reply_id; // Gán ID của phản hồi
-        $contact->status = 1; // Cập nhật trạng thái đã xử lý
-        $contact->updated_by = Auth::id(); // Gán người trả lời
-        $contact->save();
+        // Kiểm tra nếu reply_id có trong request
+        if (!$request->has('reply_id')) {
+            return redirect()->back()->with('error', 'Chưa chọn phản hồi.');
+        }
 
-        return redirect()->back()->with('success', 'Đã trả lời liên hệ thành công');
+        // Tìm liên hệ theo ID
+        $contact = Contact::findOrFail($id);
+
+        // Cập nhật phản hồi và trạng thái
+        try {
+            $contact->reply_id = $request->reply_id; // Gán ID của phản hồi
+            $contact->status = 1; // Cập nhật trạng thái đã xử lý
+            $contact->updated_by = Auth::id(); // Gán người trả lời
+            $contact->save(); // Lưu lại thay đổi
+
+            // Thông báo thành công
+            return redirect()->back()->with('success', 'Đã trả lời liên hệ thành công');
+        } catch (\Exception $e) {
+            // Nếu có lỗi, thông báo lỗi
+            return redirect()->back()->with('error', 'Có lỗi xảy ra, vui lòng thử lại.');
+        }
     }
+
+
 
     // Thay đổi trạng thái của contact (chưa xử lý hoặc đã xử lý)
     public function status($id)

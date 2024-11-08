@@ -6,7 +6,6 @@ import Contact from './pages/Contact/Contact';
 import Categories from './pages/category/categories';
 import Orders from './pages/order/order';
 import Users from './pages/user/user';
-
 import Banner from './pages/banner/banner';
 import Brand from './pages/brand/brand';
 import AddBrand from './pages/brand/Addbrand';
@@ -32,7 +31,7 @@ import Login from './pages/auth/login';
 import OrderDetail from './pages/order/OrderDetail';
 import Menu from './pages/menu/Menu';
 import AccountSettings from './pages/profile/AccountSettings';
-
+import Register from './pages/auth/register';
 function App() {
     // Trạng thái mở/đóng Sidebar và trạng thái đăng nhập
     const [isOpen, setIsOpen] = useState(false);
@@ -82,6 +81,7 @@ function App() {
                             path="/login"
                             element={<Login onLogin={handleLogin} />}
                         />
+                         <Route path="/register" element={<Register />} />
 
                         {/* Các route khác sẽ yêu cầu người dùng phải đăng nhập */}
                         {isAuthenticated && (
@@ -105,7 +105,7 @@ function App() {
                                 <Route path="/order/:id" element={<OrderDetail />} />
 
                                 <Route path="/user" element={<Users />} />
-                            
+
 
                                 <Route path="/banner" element={<Banner />} />
                                 <Route path="/banner/add" element={<AddBanner />} />
@@ -124,8 +124,10 @@ function App() {
 
                                 <Route path="/menu" element={<Menu />} />
 
-                                <Route path="/account-settings" element={<AccountSettings/>} />
-                                <Route path="/contact" element={<Contact/>} />
+                                <Route path="/account-settings" element={<AccountSettings />} />
+                                <Route path="/contact" element={<Contact />} />
+                             
+                               
                             </>
                         )}
                     </Routes>
